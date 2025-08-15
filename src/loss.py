@@ -7,19 +7,16 @@ class ContrastiveLoss(nn.Module):
         super(ContrastiveLoss, self).__init__()
         self.temperature = temperature
 
-    def forward(self, student_hidden, teacher_hidden, labels):
-        student_hidden = F.normalize(student_hidden, dim=-1)
-        teacher_hidden = F.normalize(teacher_hidden, dim=-1)
+    def forward(self, hidden, labels):
+        hidden = F.normalize(hidden, dim=-1)
+        similarity_matrix = torch.matmul(hidden, hidden.T) / self.temperature
 
-        similarity_matrix = torch.matmul(student_hidden, teacher_hidden.T) / self.temperature
+        positive_mask = (labels.unsqueeze(1) == labels.unsqueeze(0)).float()
+        positive_mask.fill_diagonal_(0)
 
-        batch_size = student_hidden.size(0)
-        positive_mask = torch.eye(batch_size, device=student_hidden.device)
+        exp_sim = torch.exp(similarity_matrix)
+        pos_sum = (exp_sim * positive_mask).sum(1) / (positive_mask.sum(1) + 1e-9)  # positives 평균 sim
+        total_sum = exp_sim.sum(1)
 
-        logits = similarity_matrix - positive_mask * 1e9
-        exp_logits = torch.exp(logits)
-        log_prob = logits - torch.log(exp_logits.sum(1, keepdim=True))
-
-        positive_log_prob = log_prob[positive_mask.bool()].view(batch_size, -1)
-        loss = -positive_log_prob.mean()
+        loss = -torch.log(pos_sum / total_sum).mean()
         return loss

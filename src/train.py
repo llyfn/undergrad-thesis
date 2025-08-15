@@ -29,8 +29,8 @@ def train(model, train_loader, val_loader, test_loader, device, output_dir, epoc
             labels = batch['label'].to(device)
 
             optimizer.zero_grad()
-            student_hidden, teacher_hidden = model(input_ids, attention_mask, is_pretraining=True)
-            loss = con_loss_fn(student_hidden, teacher_hidden, labels)
+            hidden = model(input_ids, attention_mask, is_pretraining=True)  # hidden 반환
+            loss = con_loss_fn(hidden, labels)
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
