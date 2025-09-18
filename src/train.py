@@ -4,12 +4,9 @@ import os
 from datetime import datetime
 from tqdm import tqdm
 
-from loss import ContrastiveLoss
 from evaluate import evaluate
 
-def train(model, train_loader, val_loader, test_loader, device, output_dir, epochs=5, pretrain_epochs=2, lr=2e-5):
-    con_loss_fn = ContrastiveLoss()
-    ce_loss_fn = torch.nn.CrossEntropyLoss()
+def train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader, device, output_dir, epochs=5, pretrain_epochs=2, lr=2e-5):
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -29,7 +26,7 @@ def train(model, train_loader, val_loader, test_loader, device, output_dir, epoc
             labels = batch['label'].to(device)
 
             optimizer.zero_grad()
-            hidden = model(input_ids, attention_mask, is_pretraining=True)  # hidden 반환
+            hidden = model(input_ids, attention_mask, is_pretraining=True)
             loss = con_loss_fn(hidden, labels)
             loss.backward()
             optimizer.step()

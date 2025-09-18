@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 
 class SarcasmDataset(Dataset):
     def __init__(self, data_source, model_name, max_length: int):
-        self.data = pd.read_csv(data_source)
+        self.data = data_source
         self.data = self.data.dropna(subset=['comment']).reset_index(drop=True)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
         self.max_length = max_length
@@ -36,7 +36,7 @@ class SarcasmDataset(Dataset):
         return {
             'input_ids': encoding['input_ids'].squeeze(),
             'attention_mask': encoding['attention_mask'].squeeze(),
-            'labels': torch.tensor(label, dtype=torch.long),
+            'label': torch.tensor(label, dtype=torch.long),
             'text': input_text
         }
 

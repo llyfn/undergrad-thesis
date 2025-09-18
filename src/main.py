@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 import os
 
 from dataset import load_dataset
+from loss import ContrastiveLoss
 from model import SarcasmModel
 from train import train
 
@@ -18,9 +19,11 @@ def main(args):
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size)
 
-    model = SarcasmModel(args.model_name).to(device)
+    model = SarcasmModel(args.model_name, dropout=args.dropout).to(device)
+    con_loss_fn = ContrastiveLoss(temperature=args.temperature)
+    ce_loss_fn = torch.nn.CrossEntropyLoss()
 
-    train(model, train_loader, val_loader, test_loader, device, args.output_dir, args.epochs, args.pretrain_epochs, args.lr)
+    train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader, device, args.output_dir, args.epochs, args.pretrain_epochs, args.lr)
 
 
 if __name__ == "__main__":
