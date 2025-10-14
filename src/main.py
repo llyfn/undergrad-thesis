@@ -12,9 +12,7 @@ def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     os.makedirs(args.output_dir, exist_ok=True)
 
-    train_dataset, val_dataset, test_dataset = load_dataset(
-        args.data, args.model_name, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1
-    )
+    train_dataset, val_dataset, test_dataset = load_dataset(args.dataset, args.model_name, val_ratio=0.1)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size)
@@ -29,7 +27,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sarcasm Detection with Contrastive Learning")
     parser.add_argument('--model_name', type=str, default='roberta-base', help='Base model name (e.g. bert-base-cased, roberta-base)')
-    parser.add_argument('--data', type=str, default='./data/sarcasm/train-balanced-sarcasm.csv', help='Path to input CSV')
+    parser.add_argument('--dataset', type=str, default='figlang-reddit', choices=['figlang-reddit', 'figlang-twitter', 'sarc-reddit'], help='Dataset name')
     parser.add_argument('--output_dir', type=str, default='./out', help='Directory to save model checkpoints and logs')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size')
     parser.add_argument('--epochs', type=int, default=3, help='Fine-tuning epochs')
