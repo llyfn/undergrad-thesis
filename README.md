@@ -4,7 +4,7 @@
 ```bash
 python src/main.py \
     --model_name roberta-base \
-    --data data/sarcasm/train-balanced-sarcasm.csv \
+    --dataset figlang-reddit \
     --output_dir ./out/contrastive \
     --batch_size 64 \
     --epochs 3 \
