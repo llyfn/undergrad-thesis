@@ -1,0 +1,12 @@
+{
+  "model_name": "roberta-base",
+  "dataset": "figlang-reddit",
+  "output_dir": "./out",
+  "batch_size": 64,
+  "epochs": 3,
+  "pretrain_epochs": 3,
+  "lr": 1e-5,
+  "model_lr": 1e-6,
+  "dropout": 0.3,
+  "temperature": 0.07
+}

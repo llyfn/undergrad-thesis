@@ -2,7 +2,9 @@ import argparse
 import torch
 from torch.utils.data import DataLoader
 import os
+import json
 
+from types import SimpleNamespace
 from dataset import load_dataset
 from loss import ContrastiveLoss
 from model import SarcasmModel
@@ -21,21 +23,12 @@ def main(args):
     con_loss_fn = ContrastiveLoss(temperature=args.temperature)
     ce_loss_fn = torch.nn.CrossEntropyLoss()
 
-    train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader, device, args.output_dir, args.epochs,
-          args.pretrain_epochs, args.lr)
+    train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader, device, args)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sarcasm Detection with Contrastive Learning")
-    parser.add_argument('--model_name', type=str, default='roberta-base', help='Base model name (e.g. bert-base-cased, roberta-base)')
-    parser.add_argument('--dataset', type=str, default='figlang-reddit', choices=['figlang-reddit', 'figlang-twitter', 'sarc-reddit'], help='Dataset name')
-    parser.add_argument('--output_dir', type=str, default='./out', help='Directory to save model checkpoints and logs')
-    parser.add_argument('--batch_size', type=int, default=16, help='Batch size')
-    parser.add_argument('--epochs', type=int, default=3, help='Fine-tuning epochs')
-    parser.add_argument('--pretrain_epochs', type=int, default=2, help='Pre-training epochs')
-    parser.add_argument('--lr', type=float, default=2e-5, help='Classifier Learning rate')
-    parser.add_argument('--model_lr', type=float, default=2e-5, help='Model Learning rate')
-    parser.add_argument("--dropout", type=float, default=0.3, help="Dropout rate for the model.")
-    parser.add_argument("--temperature", type=float, default=0.07, help="Temperature for the contrastive loss.")
-    args = parser.parse_args()
-    main(args)
+    parser.add_argument('--config', type=str, default='config.json', help='Path to the JSON configuration file')
+    with open(parser.parse_args().config, 'r') as f:
+        config = json.load(f)
+    main(SimpleNamespace(**config))

@@ -6,17 +6,18 @@ from tqdm import tqdm
 
 from evaluate import evaluate
 
-def train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader, device, output_dir, epochs=5, pretrain_epochs=2, lr=2e-5, model_lr=1e-6):
+def train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader, device, args):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     results = {
+        'config': vars(args),
         'pretrain_losses': [],
         'finetune_losses': [],
         'validation_metrics': [],
         'test_metrics': {}
     }
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
-    for epoch in range(pretrain_epochs):
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
+    for epoch in range(args.pretrain_epochs):
         model.train()
         total_loss = 0
         for batch in tqdm(train_loader, desc=f"Pre-training Epoch {epoch+1}"):
@@ -35,11 +36,11 @@ def train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader,
         results['pretrain_losses'].append(avg_loss)
         print(f"Pre-training Epoch {epoch+1}, Loss: {avg_loss}")
     optimizer_grouped_parameters = [
-        {"params": model.model.parameters(), "lr": model_lr},
-        {"params": model.classifier.parameters(), "lr": lr}
+        {"params": model.model.parameters(), "lr": args.model_lr},
+        {"params": model.classifier.parameters(), "lr": args.lr}
     ]
     optimizer = torch.optim.AdamW(optimizer_grouped_parameters)
-    for epoch in range(epochs):
+    for epoch in range(args.epochs):
         model.train()
         total_loss = 0
         for batch in tqdm(train_loader, desc=f"Fine-tuning Epoch {epoch+1}"):
@@ -75,8 +76,8 @@ def train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader,
     }
     print(f"Test - Precision: {precision:.4f}, Recall: {recall:.4f}, Macro F1: {macro_f1:.4f}")
 
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, f"results_{timestamp}.json")
+    os.makedirs(args.output_dir, exist_ok=True)
+    output_file = os.path.join(args.output_dir, f"results_{timestamp}.json")
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=4)
     print(f"Results saved to {output_file}")
