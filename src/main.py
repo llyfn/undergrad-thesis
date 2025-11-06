@@ -21,7 +21,8 @@ def main(args):
     con_loss_fn = ContrastiveLoss(temperature=args.temperature)
     ce_loss_fn = torch.nn.CrossEntropyLoss()
 
-    train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader, device, args.output_dir, args.epochs, args.pretrain_epochs, args.lr)
+    train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader, device, args.output_dir, args.epochs,
+          args.pretrain_epochs, args.lr)
 
 
 if __name__ == "__main__":
@@ -32,8 +33,9 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size')
     parser.add_argument('--epochs', type=int, default=3, help='Fine-tuning epochs')
     parser.add_argument('--pretrain_epochs', type=int, default=2, help='Pre-training epochs')
-    parser.add_argument('--lr', type=float, default=2e-5, help='Learning rate')
-    parser.add_argument("--dropout", type=float, default=0.2, help="Dropout rate for the model.")
+    parser.add_argument('--lr', type=float, default=2e-5, help='Classifier Learning rate')
+    parser.add_argument('--model_lr', type=float, default=2e-5, help='Model Learning rate')
+    parser.add_argument("--dropout", type=float, default=0.3, help="Dropout rate for the model.")
     parser.add_argument("--temperature", type=float, default=0.07, help="Temperature for the contrastive loss.")
     args = parser.parse_args()
     main(args)

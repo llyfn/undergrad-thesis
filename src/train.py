@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from evaluate import evaluate
 
-def train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader, device, output_dir, epochs=5, pretrain_epochs=2, lr=2e-5):
+def train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader, device, output_dir, epochs=5, pretrain_epochs=2, lr=2e-5, model_lr=1e-6):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     results = {
         'pretrain_losses': [],
@@ -34,8 +34,11 @@ def train(model, con_loss_fn, ce_loss_fn, train_loader, val_loader, test_loader,
         avg_loss = total_loss / len(train_loader)
         results['pretrain_losses'].append(avg_loss)
         print(f"Pre-training Epoch {epoch+1}, Loss: {avg_loss}")
-
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+    optimizer_grouped_parameters = [
+        {"params": model.model.parameters(), "lr": model_lr},
+        {"params": model.classifier.parameters(), "lr": lr}
+    ]
+    optimizer = torch.optim.AdamW(optimizer_grouped_parameters)
     for epoch in range(epochs):
         model.train()
         total_loss = 0
