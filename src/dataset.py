@@ -1,6 +1,5 @@
 import torch
 import json
-import pandas as pd
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 from sklearn.model_selection import train_test_split
@@ -9,7 +8,6 @@ FIGLANG_REDDIT_TRAIN = './data/figlang_reddit/sarcasm_detection_shared_task_redd
 FIGLANG_REDDIT_TEST = './data/figlang_reddit/sarcasm_detection_shared_task_reddit_testing.jsonl'
 FIGLANG_TWITTER_TRAIN = './data/figlang_twitter/sarcasm_detection_shared_task_twitter_training.jsonl'
 FIGLANG_TWITTER_TEST = './data/figlang_twitter/sarcasm_detection_shared_task_twitter_testing.jsonl'
-SARC_REDDIT_TRAIN = './data/sarc_reddit/train-balanced-sarcasm.csv'
 
 class SarcasmDataset(Dataset):
     def __init__(self, data, model_name, max_length: int):
@@ -25,7 +23,6 @@ class SarcasmDataset(Dataset):
         input_text = item['text']
         label = item['label']
 
-        # --- This is the reusable tokenization block ---
         encoding = self.tokenizer(
             input_text,
             max_length=self.max_length,
@@ -42,19 +39,30 @@ class SarcasmDataset(Dataset):
             'text': input_text
         }
 
+def load_dataset(dataset, model_name, val_ratio=0.1, max_length=256, random_state=42):
+    if dataset == 'figlang-reddit':
+        train, test = FIGLANG_REDDIT_TRAIN, FIGLANG_REDDIT_TEST
+    else:
+        train, test = FIGLANG_TWITTER_TRAIN, FIGLANG_TWITTER_TEST
 
-def preprocess_sarc(dataframe):
-    processed_data = []
-    dataframe = dataframe.dropna(subset=['comment']).reset_index(drop=True)
-    for _, row in dataframe.iterrows():
-        input_text = f"{row['parent_comment']} [SEP] {row['comment']}"
-        processed_data.append({
-            'text': input_text,
-            'label': int(row['label'])
-        })
-    return processed_data
+    with open(train, 'r', encoding='utf-8') as f:
+        train_val_data = [json.loads(line) for line in f]
+    with open(test, 'r', encoding='utf-8') as f:
+        test_data = [json.loads(line) for line in f]
 
-def preprocess_figlang(data):
+    train_data, val_data = train_test_split(train_val_data, test_size=val_ratio, random_state=random_state, stratify=[d['label'] for d in train_val_data])
+
+    train_data = preprocess_data(train_data)
+    val_data = preprocess_data(val_data)
+    test_data = preprocess_data(test_data)
+
+    train_dataset = SarcasmDataset(train_data, model_name, max_length)
+    val_dataset = SarcasmDataset(val_data, model_name, max_length)
+    test_dataset = SarcasmDataset(test_data, model_name, max_length)
+
+    return train_dataset, val_dataset, test_dataset
+
+def preprocess_data(data):
     processed_data = []
     label_map = {"SARCASM": 1, "NOT_SARCASM": 0}
     for item in data:
@@ -66,32 +74,3 @@ def preprocess_figlang(data):
             'label': label_map[item['label']]
         })
     return processed_data
-
-def load_dataset(dataset, model_name, val_ratio=0.1, max_length=256, random_state=42):
-    if dataset == 'figlang-reddit':
-        with open(FIGLANG_REDDIT_TRAIN, 'r', encoding='utf-8') as f: train_val_data = [json.loads(line) for line in f]
-        with open(FIGLANG_REDDIT_TEST, 'r', encoding='utf-8') as f: test_data = [json.loads(line) for line in f]
-        train_data, val_data = train_test_split(train_val_data, test_size=val_ratio, random_state=42, stratify=[d['label'] for d in train_val_data])
-        train_data = preprocess_figlang(train_data)
-        val_data = preprocess_figlang(val_data)
-        test_data = preprocess_figlang(test_data)
-    elif dataset == 'figlang-twitter':
-        with open(FIGLANG_TWITTER_TRAIN, 'r', encoding='utf-8') as f: train_val_data = [json.loads(line) for line in f]
-        with open(FIGLANG_TWITTER_TEST, 'r', encoding='utf-8') as f: test_data = [json.loads(line) for line in f]
-        train_data, val_data = train_test_split(train_val_data, test_size=val_ratio, random_state=42, stratify=[d['label'] for d in train_val_data])
-        train_data = preprocess_figlang(train_data)
-        val_data = preprocess_figlang(val_data)
-        test_data = preprocess_figlang(test_data)
-    elif dataset == 'sarc-reddit':
-        file = pd.read_csv(SARC_REDDIT_TRAIN)
-        train_val_data, test_data = train_test_split(file, test_size=val_ratio, random_state=42, stratify=file['label'])
-        train_data, val_data = train_test_split(train_val_data, test_size=val_ratio/(1 - val_ratio), random_state=42, stratify=train_val_data['label'])
-        train_data = preprocess_sarc(train_data)
-        val_data = preprocess_sarc(val_data)
-        test_data = preprocess_sarc(test_data)
-
-    train_dataset = SarcasmDataset(train_data, model_name, max_length)
-    val_dataset = SarcasmDataset(val_data, model_name, max_length)
-    test_dataset = SarcasmDataset(test_data, model_name, max_length)
-
-    return train_dataset, val_dataset, test_dataset
