@@ -1,12 +1,13 @@
 {
   "model_name": "roberta-base",
-  "dataset": "figlang-reddit",
+  "dataset": "figlang-twitter",
   "output_dir": "./out",
   "batch_size": 64,
-  "epochs": 3,
-  "pretrain_epochs": 3,
-  "lr": 1e-5,
-  "model_lr": 1e-6,
-  "dropout": 0.3,
-  "temperature": 0.07
+  "pretrain_epochs": 20,
+  "epochs": 10,
+  "pretrain_lr": 5e-5,
+  "classifier_lr": 3e-5,
+  "model_lr": 5e-7,
+  "dropout": 0.1,
+  "temperature": 0.2
 }
