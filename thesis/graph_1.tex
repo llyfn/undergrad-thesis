@@ -1,0 +1,45 @@
+\begin{tikzpicture}[node distance=.5cm]
+
+    % --- Title ---
+    \node (title) [title] {Stage 1: Supervised Contrastive Pre-training};
+
+    % --- Input Data ---
+    \node (input) [block, below=of title] {Batch of Labeled Inputs \\ \small(\texttt{context [SEP] response, label})};
+
+    % --- RoBERTa Encoder ---
+    \node (encoder) [block, below=of input] {RoBERTa Encoder};
+    \draw [main_arrow] (input) -- (encoder);
+
+    % --- Embedding Space ---
+    \node (emb_space) [space, below=.75cm of encoder] {};
+    \node [above] at (emb_space.south) {\textbf{Embedding Space}};
+    \draw [main_arrow] (encoder) -- (emb_space) node [midway, right, font=\small] {Generate Embeddings};
+
+    % Coordinates for embedding clusters
+    \coordinate (c1) at ($(emb_space.center)+(-1.5, 1.3)$); % Sarcastic cluster
+    \coordinate (c2) at ($(emb_space.center)+(1.3, -0.7)$); % Not Sarcastic cluster
+
+    % Sarcastic Embeddings (Circles)
+    \node[sarc_emb] (s1) at (c1) {};
+    \node[sarc_emb] (s2) at ($(c1)+(-0.4,-0.4)$) {};
+    \node[sarc_emb, label={[font=\small]right:$h_{sarc}$}] (s3) at ($(c1)+(0.1,-0.5)$) {};
+
+    % Not Sarcastic Embeddings (Squares)
+    \node[norm_emb] (n1) at (c2) {};
+    \node[norm_emb] (n2) at ($(c2)+(0.5,-0.1)$) {};
+    \node[norm_emb, label={[font=\small]right:$h_{norm}$}] (n3) at ($(c2)+(0.1,-0.5)$) {};
+
+    % Force arrows illustrating the contrastive objective
+    \draw[force_arrow, black, bend right=70] (s1) to node[midway, above, sloped, font=\small] {attract} (s2);
+    \draw[force_arrow, black, bend left=70] (n1) to node[midway, above, sloped, font=\small] {attract} (n2);
+    \draw[force_arrow, black, <->] (s2) to node[midway, below right, sloped, font=\small] {repel} (n3);
+
+    % --- Loss Function ---
+    \node (loss) [block, below=of emb_space] {Supervised Contrastive Loss};
+    \draw [main_arrow] (emb_space) -- (loss);
+
+    % --- Weight Update Path ---
+    \draw [update_arrow] (loss.west) -- ++(-2,0) |- (encoder.west)
+    node [midway, above, font=\small] {Update Encoder Weights};
+
+\end{tikzpicture}

@@ -1,0 +1,38 @@
+\begin{tikzpicture}[node distance=.5cm]
+
+    % --- Title ---
+    \node (title) [font=\Large\bfseries] {Stage 2: Classification Fine-tuning};
+
+    % --- Input Data ---
+    \node (input) [block, below=of title] {Input Text \\ \small(\texttt{context [SEP] response})};
+
+    % --- RoBERTa Encoder ---
+    \node (encoder) [block, below=of input] {RoBERTa Encoder \\ \small\textit{(Weights from Stage 1)}};
+    \draw [main_arrow] (input) -- (encoder);
+
+    % --- Classifier Head ---
+    \node (classifier) [block, below=.75cm of encoder] {Classifier Head \\ \small(e.g., Linear Layer + Softmax)};
+    \draw [main_arrow] (encoder) -- (classifier) node [midway, right, font=\small] {CLS Token Embedding};
+
+    % --- Final Prediction ---
+    \node (prediction) [output, below=of classifier] {Prediction};
+    \draw [main_arrow] (classifier) -- (prediction);
+
+    % --- Loss Calculation (Revised Style) ---
+    \node (loss) [block, below=of prediction] {Cross-Entropy Loss};
+    \draw [main_arrow] (prediction) -- (loss);
+
+    % Replace the block with a simple text node for the label
+    \node (label_text) [above left=0.3cm and -2cm of loss] {True Label};
+    \draw [main_arrow] (label_text) -| (loss.north);
+
+    % --- Weight Update Paths ---
+    % Path to update the classifier (rerouted to the right)
+    \draw [update_arrow] (loss.east) -- ++(2,0) |- (classifier.east)
+    node [midway, above, font=\small] {Update};
+
+    % Path to update the main encoder (originating from a clean point)
+    \draw [update_arrow] (loss.west) -- ++(-2,0) |- (encoder.west)
+    node [midway, above, font=\small] {Fine-tune};
+
+\end{tikzpicture}
