@@ -23,7 +23,7 @@
     \draw [main_arrow] (prediction) -- (loss);
 
     % Replace the block with a simple text node for the label
-    \node (label_text) [above left=0.3cm and -2cm of loss] {True Label};
+    \node (label_text) [above left=0.1cm and -2cm of loss] {True Label};
     \draw [main_arrow] (label_text) -| (loss.north);
 
     % --- Weight Update Paths ---
