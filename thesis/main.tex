@@ -314,12 +314,12 @@
     These results suggest that by first training the encoder to explicitly separate the classes in the embedding space (Stage 1), we provide a much better initialization for the final classifier (Stage 2), leading to superior performance.
 
     \section{Conclusion}
-    In this paper, we proposed SimSCLSD, a simple two-stage framework for context-aware sarcasm detection.
-    Our method first adapts a RoBERTa encoder to the task's feature space using a supervised contrastive loss, followed by a standard fine-tuning stage with a cross-entropy loss.
+    In this paper, we proposed and evaluated SimSCLSD, a simple two-stage framework for context-aware sarcasm detection.
+    We demonstrated that preceding a standard classification fine-tuning stage with a task-specific supervised contrastive pre-training stage is an effective method for improving performance.
 
-    Our experiments on the FigLang 2020 Reddit and Twitter datasets demonstrate the effectiveness of this approach.
-    The SimSCLSD model significantly outperformed a standard fine-tuning baseline, achieving a 5.1\% absolute improvement in Macro F1-score on the Reddit dataset and a 3.4\% improvement on the Twitter dataset.
-    This confirms our hypothesis that for nuanced, context-dependent tasks like sarcasm detection, explicitly training the encoder to produce a more discriminative and well-separated embedding space (Stage 1) provides a superior foundation for the final classifier (Stage 2).
+    Our model was evaluated on the two datasets from the FigLang 2020 shared task~\cite{ghosh2020report}, Reddit and Twitter.
+    The experimental results show that our SimSCLSD framework substantially outperforms a strong baseline, achieving an absolute Macro F1-score improvement of 9.7\%p on the Reddit dataset and 6.7\%p on the Twitter dataset.
+    This confirms our central hypothesis: for complex, context-dependent nuanced tasks like sarcasm detection, explicitly training the encoder to produce a more discriminative and well-separated embedding space provides a superior foundation for the final classifier.
 
     This study was limited to the RoBERTa-base model.
     Future work could explore the impact of this framework on larger language models.
