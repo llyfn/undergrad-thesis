@@ -104,7 +104,7 @@
     While pre-trained Transformer-based language models have become standard baselines, they are typically fine-tuned using a Cross-Entropy (CE) loss.
     This approach may not be optimal for learning discriminative representations, especially for a nuanced task like sarcasm where the boundary between classes is subtle.
 
-    In this paper, we propose \textbf{SimSCLSD}, a \textbf{Sim}ple framework for \textbf{S}upervised \textbf{C}ontrastive \textbf{L}earning of \textbf{S}arcasm \textbf{D}etection, which introduces a two-stage training process.
+    In this paper, we propose SimSCLSD, a Simple framework for Supervised Contrastive Learning of Sarcasm Detection, which introduces a two-stage training process.
     First, a RoBERTa-based encoder undergoes a ``contrastive pre-training'' phase on the task-specific dataset.
     This stage utilizes a supervised contrastive loss to learn a discriminative embedding space, pulling representations of same-label examples (e.g., two sarcastic comments) together while pushing representations of different-label examples apart.
     Second, the adapted model is fine-tuned using a standard CE loss for the final classification.
@@ -133,51 +133,60 @@
     \setcounter{page}{1}
 
     \section{Related Work}
-    Our research is positioned at the intersection of three key areas: \textbf{(1)} sarcasm detection as a context-dependent task, \textbf{(2)} the use of Transformer-based models for this task, and \textbf{(3)} the application of supervised contrastive learning to improve representation quality in NLP.
+    Our research is positioned at the intersection of three key areas: sarcasm detection as a context-dependent task, the use of Transformer-based models for this task, and the application of supervised contrastive learning to improve representation quality in NLP\@.
 
     \subsection{Sarcasm Detection and Context}
     Sarcasm detection is typically framed as a binary classification task (sarcastic vs. non-sarcastic).
     It is a critical sub-problem in NLP, as accurately identifying sarcastic intent is essential for understanding a user's true sentiments and beliefs.
     The primary challenge is that sarcastic utterances often use positive words to convey a negative meaning, making the literal text misleading.
 
-    Researchers have shown that for both humans and computers, \textbf{conversational context is vital} for correctly identifying sarcasm.
-    An isolated response like ``Man, I've seen more than that on a Friday night!'' is ambiguous, but it becomes clearly sarcastic when preceded by the context ``People think 5 tonnes is not a lot of cocaine''~\cite{ghosh2020report}.
+    Researchers have shown that for both humans and computers, conversational context is vital for correctly identifying sarcasm.
+    An isolated response may be ambiguous, but its sarcastic nature becomes clear when paired with the preceding conversation~\cite{ghosh2020report}.
     The FigLang 2020 shared task, the source of our datasets, was specifically designed to benchmark models on their ability to leverage this conversational context~\cite{ghosh2020report}.
 
     \subsection{Transformer Models for Sarcasm Detection}
-    While early approaches relied on feature-based machine learning models, the field is now dominated by pre-trained Transformer architectures.
-    A review of the FigLang 2020 task~\cite{ghosh2020report} shows that nearly all top-performing systems used variants of BERT~\cite{devlin2019bert} and RoBERTa~\cite{liu2019roberta}.
+    The FigLang 2020 shared task demonstrated that pre-trained Transformer models (PLRMs) are the dominant architecture for this problem~\cite{ghosh2020report}.
+    Top-performing teams almost universally adopted variants of BERT~\cite{devlin2019bert} and RoBERTa~\cite{liu2019roberta, dong2020transformer, jaiswal2020neural}.
+    The primary architectural challenge then became how to best incorporate the conversational context.
 
-    A key design choice for these models is how to present the conversational context to the model.
+    Several strategies emerged from the shared task:
     \begin{itemize}
-        \item \textbf{Concatenation:} The most common approach is to simply concatenate the context and the target response into a single input sequence~\cite{pant2020sarcasm}.
-        \item \textbf{Hierarchical Models:} More complex methods, such as that by Srivastava et al.(2020)~\cite{srivastava2020novel}, use a hierarchical architecture.
-        They first encode all context sentences, pass them through a summarization (e.g., CNN and LSTM) layer, and then combine this summarized context representation with the response representation for a final prediction.
-        \item \textbf{Context Separators:} Pant and Dadu (2020)~\cite{pant2020sarcasm}, in their work on the same dataset, demonstrated that explicitly formatting the input matters.
-        They found that fine-tuning RoBERTa with a special separator token between the context and the response yielded a \textbf{5.13\% F1-score improvement} on the Reddit dataset compared to simple concatenation~\cite{pant2020sarcasm}, highlighting that the model can learn the significance of this structural boundary.
-        Our work adopts this separator-based input format.
+        \item \textbf{Concatenation:} The most common approach was to concatenate the context and the target response into a single input sequence, which is then fed into the Transformer~\cite{dong2020transformer}.
+        Dong et al. (2020) showed this ``context-aware'' model significantly outperformed a ``target-oriented'' model that only used the response~\cite{dong2020transformer}.
+
+        \item \textbf{Input Formatting:} Pant and Dadu (2020)~\cite{pant2020sarcasm} demonstrated that the *method* of concatenation matters.
+        They found that fine-tuning RoBERTa with a special separator token between the context and the response yielded a performance improvement on the Reddit dataset compared to simple concatenation~\cite{pant2020sarcasm}.
+        Our work adopts this separator-based format.
+
+        \item \textbf{Context Length and Ensembling:} A key finding from several top teams was that using the entire context history was not always optimal.
+        Jaiswal (2020)~\cite{jaiswal2020neural} and Lee et al. (2020)~\cite{lee2020augmenting} both found that using only the most recent three context turns provided the best performance, suggesting that older context may add noise~\cite{jaiswal2020neural, lee2020augmenting}.
+        Both teams also employed an ensembling strategy, combining models trained on different context lengths~\cite{jaiswal2020neural, lee2020augmenting}.
+
+        \item \textbf{Novel Formulations:} Other approaches included hierarchical models~\cite{srivastava2020novel} and adapting Aspect-Based Sentiment Analysis (ABSA) models, which treat the context as the ``aspect'' and the response as the ``target''~\cite{ataei2020applying}.
+        The winning team, Lee et al. (2020)~\cite{lee2020augmenting}, attributed their success to a novel data augmentation technique (CRA) and a complex pooling mechanism (NeXtVLAD).
     \end{itemize}
+    While these approaches focused on architectural changes, input formatting, and data augmentation, our work investigates a complementary approach: optimizing the learning objective itself.
 
     \subsection{Supervised Contrastive Learning for NLP}
-    The vast majority of Transformer-based classifiers are fine-tuned using a standard \textbf{Cross-Entropy (CE) loss}.
+    The vast majority of Transformer-based classifiers are fine-tuned using a standard Cross-Entropy (CE) loss.
     However, CE has known limitations; it optimizes for correct classification but does not explicitly enforce a discriminative embedding space.
     This can lead to poor margins and instability, especially on noisy or nuanced datasets.
 
-    \textbf{Contrastive Learning} has emerged as a powerful alternative for representation learning.
-    It was popularized in self-supervised vision (e.g., SimCLR), where the goal is to ``pull'' representations of augmented views of the same image (positives) together while ``pushing'' representations of all other images (negatives) apart.
+    Contrastive Learning has emerged as a powerful alternative for representation learning.
+    It was popularized in self-supervised vision (e.g., SimCLR~\cite{chen2020simple}), where the goal is to ``pull'' representations of augmented views of the same image (positives) together while ``pushing'' representations of all other images (negatives) apart.
 
-    Our work uses \textbf{Supervised Contrastive (SupCon) Learning}, an extension formalized by Khosla et al. (2020)~\cite{khosla2020supervised} that leverages label information.
-    Instead of only pulling augmented views of one sample together, the SupCon loss aims to pull all samples belonging to the \textbf{same class} into a tight cluster in the embedding space, while simultaneously pushing apart clusters of samples from different classes.
+    Our work uses Supervised Contrastive (SupCon) Learning, an extension formalized by Khosla et al. (2020)~\cite{khosla2020supervised} that leverages label information.
+    Instead of only pulling augmented views of one sample together, the SupCon loss aims to pull all samples belonging to the same class into a tight cluster in the embedding space, while simultaneously pushing apart clusters of samples from different classes.
 
     This technique has been successfully applied as an intermediate training step for large language models.
-    Moukafih et al. (2022)~\cite{moukafih2022simscl} proposed \textbf{SimSCL}, a simple supervised contrastive framework for text representation, showing its effectiveness on sentiment classification.
+    Moukafih et al. (2022)~\cite{moukafih2022simscl} proposed SimSCL, a simple supervised contrastive framework for text representation, showing its effectiveness on sentiment classification.
     Li et al. (2021)~\cite{li2021simclad} also proposed a similar ``continual contrastive pre-training'' to adapt a general-purpose model (like BERT) to a specific task's feature distribution.
     Our work builds on these ideas, extending the SimSCL methodology to the more complex, context-dependent task of sarcasm detection.
 
     \section{Proposed Method}
     Our approach, SimSCLSD, is a two-stage framework that conceptually separates the learning of feature representations from the learning of the classification boundary.
     This method is designed to create a more discriminative and well-separated embedding space before the final classification.
-    The two stages are illustrated in Figure \ref{fig:stage1} and Figure \ref{fig:stage2}.
+    The two stages are illustrated in Figure~\ref{fig:stage1} and Figure~\ref{fig:stage2}.
 
     \begin{figure}[H]
         \centering
@@ -196,14 +205,14 @@
     \subsection{Stage 1: Supervised Contrastive Pre-training}
     The first stage trains the encoder to produce separable feature representations.
     For a given input sequence, the model generates a final hidden state for all tokens.
-    We apply a \textbf{mean-pooling} operation over these hidden states to produce a single vector representation $z$ for the entire sequence.
+    We apply a mean-pooling operation over these hidden states to produce a single vector representation $z$ for the entire sequence.
 
-    This representation $z$ is optimized using a \textbf{Supervised Contrastive Loss} ($\mathcal{L}_{\text{SupCon}}$).
+    This representation $z$ is optimized using a Supervised Contrastive Loss ($\mathcal{L}_{\text{SupCon}}$).
     This loss, based on the $\mathcal{L}_{\text{out}}^{\text{sup}}$ formulation from Khosla et al. (2020)~\cite{khosla2020supervised}, is defined for a batch of $N$ samples as:
 
-    $$
+    \[
     \mathcal{L}_{\text{SupCon}} = \sum_{i \in I} \frac{-1}{|P(i)|} \sum_{p \in P(i)} \log \frac{\exp(z_i \cdot z_p / \tau)}{\sum_{a \in A(i)} \exp(z_i \cdot z_a / \tau)}
-    $$
+    \]
 
     Where $i$ is an ``anchor'' sample, $z_i$ is its normalized embedding, $P(i)$ is the set of ``positive'' samples in the batch (those with the same label as $i$), $A(i)$ is the set of all other samples, and $\tau$ is a temperature hyperparameter.
     This objective function explicitly trains the encoder to maximize the similarity between samples from the same class (attract) while minimizing the similarity between samples from different classes (repel).
@@ -211,10 +220,10 @@
     \subsection{Stage 2: Classification Fine-tuning}
     The second stage trains the classifier.
     The encoder weights are frozen from Stage 1, and a new linear classification head is added.
-    For this stage, we use the standard \textbf{\texttt{[CLS]} token embedding} as the input to the classifier, as it is specifically designed to aggregate sequence-level information for classification tasks.
+    For this stage, we use the standard \texttt{[CLS]} token embedding as the input to the classifier, as it is specifically designed to aggregate sequence-level information for classification tasks.
 
-    This classifier is then trained using a standard \textbf{Cross-Entropy (CE) Loss}.
-    A key feature of this stage is the use of \textbf{differential learning rates}, where the pre-trained encoder is fine-tuned with a very low learning rate, while the new classification head is trained with a higher learning rate.
+    This classifier is then trained using a standard Cross-Entropy (CE) Loss.
+    A key feature of this stage is the use of differential learning rates, where the pre-trained encoder is fine-tuned with a very low learning rate, while the new classification head is trained with a higher learning rate.
     This allows the classifier to adapt to the new feature space without causing catastrophic forgetting in the underlying encoder.
 
     \section{Experiments}
@@ -232,24 +241,29 @@
 
     \subsection{Experimental Setup}
     We compare two models to evaluate the effectiveness of our proposed framework.
+    All models use RoBERTa-base~\cite{liu2019roberta} as the encoder and a batch size of 64.
+    All training runs use early stopping on the fine-tuning stage with a patience of 2, based on the validation macro F1-score.
 
-    \textbf{Baseline (Ablation):} This is a standard fine-tuning approach for RoBERTa-base~\cite{liu2019roberta}.
-    The model is trained for a total of 15 epochs using only the Cross-Entropy loss, with a batch size of 64 and a single learning rate of $3 \times 10^{-5}$.
+    \textbf{Baseline (Ablation):} This is a standard fine-tuning approach.
+    The model is trained for up to 10 epochs using only the Cross-Entropy loss.
+    For the Twitter dataset, a learning rate of $3 \times 10^{-5}$ was used for the classifier and $5 \times 10^{-7}$ for the encoder.
+    For the Reddit dataset, learning rates of $3 \times 10^{-5}$ and $1 \times 10^{-6}$ were used, respectively.
     This represents the ``ablation'' model, as it omits our Stage 1 pre-training.
 
     \textbf{SimSCLSD (Ours):} This is our proposed two-stage framework.
     \begin{itemize}
-        \item \textbf{Stage 1 (Contrastive):} The RoBERTa-base encoder is trained for 10 epochs using our Supervised Contrastive Loss.
+        \item \textbf{Stage 1 (Contrastive):} The encoder is trained for 20 epochs using our Supervised Contrastive Loss with a learning rate of $5 \times 10^{-5}$ and a temperature $\tau$ of $0.2$.
         \item The learning rate is $3 \times 10^{-5}$ for the entire model.
-        \item \textbf{Stage 2 (Fine-tuning):} The adapted encoder is fine-tuned for 5 epochs using a Cross-Entropy loss.
-        \item We use differential learning rates: $3 \times 10^{-5}$ for the classifier head and $5 \times 10^{-7}$ for the encoder.
+        Supervised Contrastive Loss with a learning rate of $5 \times 10^{-5}$ and a temperature $\tau$ of $0.2$.
+        \item \textbf{Stage 2 (Fine-tuning):} The adapted encoder is fine-tuned for up to 10 epochs using a Cross-Entropy loss. For the Twitter dataset, learning rates were $3 \times 10^{-5}$ (classifier) and $5 \times 10^{-7}$ (encoder).
+        For the Reddit dataset, they were $1 \times 10^{-5}$ (classifier) and $1 \times 10^{-6}$ (encoder).
     \end{itemize}
-    For both stages, we use a batch size of 64 and a temperature $\tau$ of $0.07$.
-    All models are trained with early stopping based on the validation set's macro F1-score, with a patience of 2 epochs.
+    The dropout rate was set to 0.1 for Twitter and 0.5 for the Reddit SimSCLSD model.
 
     \subsection{Classification Results}
     We evaluate all models on the official test set using Macro Precision, Recall, and F1-score.
-    The results of our experiments are presented in Table \ref{tab:results}.
+    The model checkpoint that performed best on the validation set was used for final testing.
+    The results of our experiments are presented in Table~\ref{tab:results}.
 
     \begin{table}[H]
         \centering
