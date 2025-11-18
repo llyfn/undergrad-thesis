@@ -272,8 +272,6 @@
     \textbf{SimSCLSD (Ours):} This is our proposed two-stage framework.
     \begin{itemize}
         \item Stage 1 (Contrastive): The encoder is trained for 20 epochs using our Supervised Contrastive Loss with a learning rate of $5 \times 10^{-5}$ and a temperature $\tau$ of $0.2$.
-        The learning rate is $3 \times 10^{-5}$ for the entire model.
-        Supervised Contrastive Loss with a learning rate of $5 \times 10^{-5}$ and a temperature $\tau$ of $0.2$.
         \item Stage 2 (Fine-tuning): The adapted encoder is fine-tuned for up to 10 epochs using a Cross-Entropy loss.
         For the Twitter dataset, learning rates were $3 \times 10^{-5}$ (classifier) and $5 \times 10^{-7}$ (encoder).
         For the Reddit dataset, they were $1 \times 10^{-5}$ (classifier) and $1 \times 10^{-6}$ (encoder).
