@@ -154,7 +154,7 @@
         \item \textbf{Concatenation:} The most common approach was to concatenate the context and the target response into a single input sequence, which is then fed into the Transformer~\cite{dong2020transformer}.
         Dong et al. (2020) showed this context-aware model significantly outperformed a target-oriented model that only used the response~\cite{dong2020transformer}.
 
-        \item \textbf{Input Formatting:} Pant and Dadu (2020)~\cite{pant2020sarcasm} demonstrated that the *method* of concatenation matters.
+        \item \textbf{Input Formatting:} Pant and Dadu (2020)~\cite{pant2020sarcasm} demonstrated that the method of concatenation matters.
         They found that fine-tuning RoBERTa with a special separator token between the context and the response yielded a performance improvement on the Reddit dataset compared to simple concatenation~\cite{pant2020sarcasm}.
         Our work adopts this separator-based format.
 
@@ -212,7 +212,7 @@
     \subsubsection{Stage 1: Supervised Contrastive Pre-training}
     As illustrated in Figure~\ref{fig:stage1}, the first stage trains the encoder to produce separable feature representations.
     The mean-pooled representation $z$ is optimized using a Supervised Contrastive Loss ($\mathcal{L}_{\text{SupCon}}$).
-    This loss, based on the $\mathcal{L}_{\text{out}}^{\sup}$ formulation from Khosla et al. (2020)~\cite{khosla2020supervised}, is defined for a batch of $N$ samples as:
+    This loss, based on the formulation from Khosla et al. (2020)~\cite{khosla2020supervised}, is defined for a batch of $N$ samples as:
 
     \[
         \mathcal{L}_{\text{SupCon}} = \sum_{i \in I} \frac{-1}{|P(i)|} \sum_{p \in P(i)} \log \frac{\exp(z_i \cdot z_p / \tau)}{\sum_{a \in A(i)} \exp(z_i \cdot z_a / \tau)}
