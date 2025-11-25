@@ -1,38 +1,33 @@
-\begin{tikzpicture}[node distance=.5cm]
-
-    % --- Title ---
-    \node (title) [font=\Large\bfseries] {Stage 2: Classification Fine-tuning};
+\begin{tikzpicture}[node distance=0.7cm]
 
     % --- Input Data ---
-    \node (input) [block, below=of title] {Input Text \\ \small(\texttt{context [SEP] response})};
+    \node (input) [block] {Input Text \\ \scriptsize(\texttt{context [SEP] response})};
 
     % --- RoBERTa Encoder ---
-    \node (encoder) [block, below=of input] {RoBERTa Encoder \\ \small\textit{(Weights from Stage 1)}};
+    \node (encoder) [block, right=of input] {RoBERTa Encoder \\ \scriptsize\textit{(Weights from Stage 1)}};
     \draw [main_arrow] (input) -- (encoder);
 
     % --- Classifier Head ---
-    \node (classifier) [block, below=.75cm of encoder] {Classifier Head \\ \small(e.g., Linear Layer + Softmax)};
-    \draw [main_arrow] (encoder) -- (classifier) node [midway, right, font=\small] {CLS Token Embedding};
+    \node (classifier) [block, right=1.0cm of encoder] {Classifier Head \\ \scriptsize(Linear Layer + Softmax)};
+    \draw [main_arrow] (encoder) -- (classifier) node [midway, above, font=\scriptsize] {\texttt{[CLS]}};
 
     % --- Final Prediction ---
-    \node (prediction) [output, below=of classifier] {Prediction};
+    \node (prediction) [output, right=of classifier] {Pred};
     \draw [main_arrow] (classifier) -- (prediction);
 
-    % --- Loss Calculation (Revised Style) ---
-    \node (loss) [block, below=of prediction] {Cross-Entropy Loss};
+    % --- Loss Calculation ---
+    \node (loss) [block, right=of prediction] {Cross-Entropy Loss};
     \draw [main_arrow] (prediction) -- (loss);
 
-    % Replace the block with a simple text node for the label
-    \node (label_text) [above left=0.1cm and -2cm of loss] {True Label};
-    \draw [main_arrow] (label_text) -| (loss.north);
+    % --- True Label Input ---
+    \node (label_text) [above=0.5cm of loss] {True Label};
+    \draw [main_arrow] (label_text) -- (loss);
 
     % --- Weight Update Paths ---
-    % Path to update the classifier (rerouted to the right)
-    \draw [update_arrow] (loss.east) -- ++(2,0) |- (classifier.east)
-    node [midway, above, font=\small] {Update};
+    \draw [update_arrow] (loss.south) -- ++(0,-0.5) -| (classifier.south)
+    node [pos=0.25, above, font=\scriptsize] {Update};
 
-    % Path to update the main encoder (originating from a clean point)
-    \draw [update_arrow] (loss.west) -- ++(-2,0) |- (encoder.west)
-    node [midway, above, font=\small] {Fine-tune};
+    \draw [update_arrow] (loss.south) -- ++(0,-0.75) -| (encoder.south)
+    node [pos=0.25, below, font=\scriptsize] {Fine-tune};
 
 \end{tikzpicture}
