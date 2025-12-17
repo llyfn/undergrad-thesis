@@ -13,6 +13,7 @@
 \usepackage{booktabs}
 \usepackage{kotex}
 \usepackage{multirow}
+\usepackage{pgfplots}
 
 % Page numbers at the bottom center.
 \usepackage{fancyhdr}
@@ -21,6 +22,7 @@
 \cfoot{\thepage}
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}
+\pgfplotsset{compat=1.17}
 
 % Double spacing for the main body.
 \doublespacing
@@ -53,42 +55,6 @@
 
         \vspace{1cm}
         {\large 엄 태 윤}
-
-    \end{titlepage}
-
-% --- APPROVAL PAGE ---
-    \begin{titlepage}
-        \centering
-        \vspace*{2cm}
-        {\huge SimSCLSD: A Simple Framework for Supervised Contrastive Learning of Sarcasm Detection}
-
-        \vspace{1cm}
-        {\large 반어 표현 탐지를 위한 단순 지도 대조 학습 프레임워크}
-
-        \vfill
-        {\large 지도교수 심 규 석}
-
-        \vspace{1cm}
-        {\large 이 논문을 공학학사 학위논문으로 제출함}
-
-        \vspace{0.5cm}
-        {\large 2026년 2월}
-
-        \vspace{0.5cm}
-        {\large 서울대학교 공과대학} \\
-        {\large 전기·정보공학부}
-
-        \vspace{0.5cm}
-        {\large 엄 태 윤}
-
-        \vspace{1.5cm}
-        {\large 엄태윤의 학사 학위논문을 인준함}
-
-        \vspace{0.5cm}
-        {\large 20\quad 년 \quad 월 \quad 일}
-
-        \vspace{0.5cm}
-        {\large 지도교수 \_\_\_\_\_\_\_\_\_\_ (인)}
 
     \end{titlepage}
 
@@ -143,7 +109,8 @@
 
     The primary difficulty in sarcasm detection lies in its reliance on context.
     An utterance that appears positive in isolation may be revealed as sarcastic only when juxtaposed with prior conversational turns or specific user attributes.
-    Recent advancements in Natural Language Processing (NLP) have seen the widespread adoption of Pre-trained Language Models such as BERT~\cite{devlin2019bert} and RoBERTa~\cite{liu2019roberta}, which have achieved state-of-the-art performance on sarcasm detection benchmarks.
+    Recent advancements in Natural Language Processing (NLP) have seen the widespread adoption of Pre-trained Language Models such as BERT~\cite{devlin2019bert} and RoBERTa~\cite{liu2019roberta}.
+    These models have achieved state-of-the-art performance on sarcasm detection benchmarks, most notably the FigLang 2020 Shared Task~\cite{ghosh2020report}, where Transformer-based systems dominated the leaderboard by leveraging conversational history.
     These models typically employ a fine-tuning paradigm where the model is optimized using the Cross-Entropy (CE) loss function.
 
     Despite their success, standard fine-tuning with CE loss has inherent limitations.
@@ -153,7 +120,7 @@
     To overcome these limitations, this study proposes SimSCLSD, a Simple framework for Supervised Contrastive Learning of Sarcasm Detection.
     Inspired by recent successes in computer vision~\cite{khosla2020supervised} and sentiment analysis~\cite{moukafih2022simscl}, we hypothesize that disentangling the representation learning phase from the classification phase can yield superior performance.
     Our approach utilizes Supervised Contrastive Learning (SupCon) as an intermediate training step.
-    By explicitly optimizing the encoder to minimize intra-class variance and maximize inter-class variance, we generate an embedding space that is structurally more conducive to linear classification.
+    By explicitly optimizing the encoder to minimize intra-class variance and maximize inter-class variance of the feature representations, we generate an embedding space that is structurally more conducive to linear classification.
 
     Our specific contributions are as follows:
     \begin{enumerate}
@@ -168,7 +135,7 @@
     \subsection{Sarcasm Detection and Contextual Dependency}
     Early approaches to sarcasm detection treated the problem primarily as a single-sentence classification task, relying on lexical cues and pattern matching~\cite{ghosh2020report, dong2020transformer}.
     However, subsequent research has established that conversational context is indispensable.
-    Wallace et al. (2014) demonstrated that humans often require context to identify ironic intent, implying that computational models share this requirement~\cite{wallace2014humans}.
+    Wallace et al. (2014)~\cite{wallace2014humans} demonstrated that humans often require context to identify ironic intent, implying that computational models share this requirement.
     Recognizing this, the FigLang 2020 Shared Task on Sarcasm Detection was organized to benchmark systems on their ability to leverage conversational history from platforms like Reddit and Twitter~\cite{ghosh2020report}.
     The shared task highlighted that models incorporating preceding dialogue turns consistently outperformed those analyzing responses in isolation.
 
@@ -208,26 +175,8 @@
     \section{Proposed Method}
     Our approach, SimSCLSD, is a two-stage training framework designed to enhance context-aware sarcasm detection.
     The central premise is to decouple representation learning from classification.
-    In the first stage, a RoBERTa encoder is optimized via a Supervised Contrastive (SupCon) objective to cluster semantic representations by class.
-    In the second stage, a linear classifier is fine-tuned on top of this frozen or low-learning-rate encoder using standard Cross-Entropy (CE) loss.
 
-    \subsection{Model Architecture and Input Formatting}
-    Our architecture utilizes a RoBERTa-base~\cite{liu2019roberta} encoder.
-    Adopting the findings of Pant and Dadu (2020)~\cite{pant2020sarcasm}, we format the input by concatenating the conversational context sequence and the target response, separated by special tokens.
-    The input sequence is constructed as follows:
-    \begin{center}
-        \texttt{[CLS] context\_1 [SEP] ... [SEP] target\_response [EOS]}
-    \end{center}
-    This format allows the self-attention mechanism to fully model the interaction between the context and the response.
-
-    We employ distinct pooling strategies for each training stage to align with their respective objectives:
-    \begin{itemize}
-        \item Stage 1 (Contrastive): We utilize Mean Pooling over the final hidden states of all tokens.
-        This generates a global sentence embedding $z$ that captures information from the entire sequence, which has been shown to be more effective for clustering-based objectives than the \texttt{[CLS]} token alone~\cite{li2021simclad}.
-        \item Stage 2 (Classification): We utilize the standard \texttt{[CLS]} token embedding as the input to the classification head, as this token is explicitly optimized for aggregate sequence classification tasks during the pre-training of BERT-family models~\cite{devlin2019bert}.
-    \end{itemize}
-
-    \subsection{Two-Stage Training Framework}
+    \subsection{Model Architecture}
     The model architecture is trained using a sequential two-stage process, which is illustrated in Figures~\ref{fig:stage1} and~\ref{fig:stage2}.
     This separation allows the model to first learn the semantic structure of sarcasm before attempting to define a decision boundary.
 
@@ -235,7 +184,8 @@
     As illustrated in Figure~\ref{fig:stage1}, the first stage is dedicated to representation learning.
     The process begins with a batch of labeled inputs formatted as \texttt{context [SEP] response}~\cite{pant2020sarcasm}.
     These inputs are fed into the RoBERTa encoder.
-    Unlike standard classification tasks that utilize the \texttt{[CLS]} token, this stage utilizes a mean-pooling operation over the token embeddings to generate a holistic representation of the sequence.
+    Unlike standard classification tasks that utilize the \texttt{[CLS]} token, this stage utilizes a mean-pooling operation over the token embeddings.
+    This is because the \texttt{[CLS]} token is often biased towards next-sentence prediction tasks from pre-training, whereas mean-pooling aggregates information from the entire sequence, producing a more robust holistic representation for clustering objectives~\cite{li2021simclad}.
 
     These representations are projected into a normalized embedding space.
     As depicted in the ``Embedding Space'' block of Figure~\ref{fig:stage1}, the Supervised Contrastive (SupCon) loss explicitly restructures this space~\cite{moukafih2022simscl}.
@@ -267,20 +217,39 @@
         \label{fig:stage2}
     \end{figure}
 
+    \subsection{Input Formatting}
+    Adopting the findings of Pant and Dadu (2020)~\cite{pant2020sarcasm}, we format the input by concatenating the conversational context sequence and the target response, separated by special tokens.
+    The input sequence is constructed as follows:
+    \begin{center}
+        \texttt{[CLS] context\_1 [SEP] ... [SEP] target\_response [EOS]}
+    \end{center}
+    This format is effective since the Transformer architecture utilizes a self-attention mechanism.
+    By placing both context and response in the same sequence, self-attention allows every token in the response to directly attend to every token in the context layers.
+    This enables the model to effectively capture the context incongruity which is the hallmark of sarcasm.
+
     \section{Experiments}
 
     \subsection{Datasets}
     We conducted our evaluation using the two primary datasets from the FigLang 2020 Shared Task on Sarcasm Detection~\cite{ghosh2020report}.
     Both datasets are balanced binary classification tasks and include conversational context.
+    The statistics of context length for both datasets are visualized in Figure~\ref{fig:context_len}.
     \begin{itemize}
         \item \textbf{FigLang-Reddit:} Comprises 4,400 training samples and 1,800 test samples.
-        Sarcasm in this dataset is self-annotated by users via the \texttt{/s} tag.
-        The dataset is characterized by longer conversation threads and complex discourse structures.
+        It is derived from the self-annotated Reddit corpus by Khodak et al. (2018)~\cite{khodak2018large}, where users mark sarcasm using the \texttt{/s} tag.
+        As shown in Figure~\ref{fig:context_len}, the dataset is characterized by short context lengths, with over 60\% of samples containing only 2 prior turns.
         \item \textbf{FigLang-Twitter:} Comprises 5,000 training samples and 1,800 test samples.
-        Labels are derived from hashtags such as \#sarcasm and \#sarcastic.
-        This dataset tends to feature shorter, more informal text with higher noise levels.
+        Sarcastic tweets are collected using hashtags such as \#sarcasm and \#sarcastic.
+        Unlike Reddit, the non-sarcastic examples are not random tweets but are sentiment-bearing tweets (containing hashtags like \#happy, \#sad), making the discrimination task considerably harder~\cite{ghosh2020report}.
+        Figure~\ref{fig:context_len} illustrates that Twitter threads are longer, with a notable distribution of samples having more than 5 context turns.
     \end{itemize}
     For our experiments, we partitioned the provided training data into a 90\% training set and a 10\% validation set to monitor convergence and perform model selection.
+
+    \begin{figure}[t]
+        \centering
+        \input{dataset}
+        \caption{Distribution of context lengths in the training datasets.}
+        \label{fig:context_len}
+    \end{figure}
 
     \subsection{Experimental Setup}
     We benchmarked our SimSCLSD framework against a strong baseline to isolate the effect of contrastive pre-training.
@@ -306,19 +275,15 @@
         \label{tab:results}
         \begin{tabular}{l c c c c c}
             \toprule
-            \textbf{Model} & \textbf{Dataset} & \textbf{Split} & \textbf{Precision} & \textbf{Recall} & \textbf{Macro F1} \\
+            \textbf{Dataset} & \textbf{Split} & \textbf{Model} & \textbf{Precision} & \textbf{Recall} & \textbf{Macro F1} \\
             \midrule
-            \multirow{2}{*}{Baseline} & \multirow{2}{*}{Reddit} & Dev & 0.5679 & 0.5568 & 0.5379 \\
-            & & Test & 0.5244 & 0.5228 & 0.5148 \\
+            \multirow{2}{*}{Reddit} & \multirow{2}{*}{Dev} & Baseline & 0.5679 & 0.5568 & 0.5379 \\ & & \textbf{SimSCLSD} & \textbf{0.6974} & \textbf{0.6955} & \textbf{0.6947} \\
             \midrule
-            \multirow{2}{*}{\textbf{SimSCLSD}} & \multirow{2}{*}{\textbf{Reddit}} & Dev & 0.6974 & 0.6955 & 0.6947 \\
-            & & \textbf{Test} & \textbf{0.6166} & \textbf{0.6139} & \textbf{0.6116} \\
+            \multirow{2}{*}{Reddit} & \multirow{2}{*}{Test} & Baseline & 0.5244 & 0.5228 & 0.5148 \\ & & \textbf{SimSCLSD} & \textbf{0.6166} & \textbf{0.6139} & \textbf{0.6116} \\
             \midrule
-            \multirow{2}{*}{Baseline} & \multirow{2}{*}{Twitter} & Dev & 0.7352 & 0.7300 & 0.7285 \\
-            & & Test & 0.7047 & 0.6861 & 0.6788 \\
+            \multirow{2}{*}{Twitter} & \multirow{2}{*}{Dev} & Baseline & 0.7352 & 0.7300 & 0.7285 \\ & & \textbf{SimSCLSD} & \textbf{0.8486} & \textbf{0.8480} & \textbf{0.8479} \\
             \midrule
-            \multirow{2}{*}{\textbf{SimSCLSD}} & \multirow{2}{*}{\textbf{Twitter}} & Dev & 0.8486 & 0.8480 & 0.8479 \\
-            & & \textbf{Test} & \textbf{0.7477} & \textbf{0.7461} & \textbf{0.7457} \\
+            \multirow{2}{*}{Twitter} & \multirow{2}{*}{Test} & Baseline & 0.7047 & 0.6861 & 0.6788 \\ & & \textbf{SimSCLSD} & \textbf{0.7477} & \textbf{0.7461} & \textbf{0.7457} \\
             \bottomrule
         \end{tabular}
     \end{table}
